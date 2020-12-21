@@ -1,6 +1,6 @@
 # Where2Act: From Pixels to Actions for Articulated 3D Objects
 
-![Overview](https://github.com/daerduoCarey/where2act/blob/master/images/teaser.png)
+![Overview](/images/teaser.png)
 
 **The Proposed Where2Act Task.** Given as input an articulated 3D object, we learn to propose the actionable information for different robotic manipulation primitives (e.g. pushing, pulling): (a) the predicted actionability scores over pixels; (b) the proposed interaction trajectories, along with (c) their success likelihoods, for a selected pixel highlighted in red. We show two high-rated proposals (left) and two with lower scores (right) due to interaction orientations and potential robot-object collisions.
 
