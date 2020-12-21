@@ -11,11 +11,10 @@ We learn to predict per-pixel actionable information for manipulating 3D articul
 
 Our team: 
 [Kaichun Mo](https://cs.stanford.edu/~kaichun),
-[Niloy Mitra](http://www0.cs.ucl.ac.uk/staff/n.mitra/),
 [Leonidas J. Guibas](https://geometry.stanford.edu/member/guibas/),
-[Mustafa Mukadam](),
-[Abhinav Gupta](),
-and [Shubham Tulsiani]()
+[Mustafa Mukadam](http://www.mustafamukadam.com/),
+[Abhinav Gupta](http://www.cs.cmu.edu/~abhinavg/),
+and [Shubham Tulsiani](https://shubhtuls.github.io/)
 from 
 Stanford University and FaceBook AI Research.
 
