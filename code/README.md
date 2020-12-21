@@ -18,9 +18,9 @@ First, install SAPIEN
 Then, if you want to run the 3D experiment, this depends on PointNet++.
 
     git clone --recursive https://github.com/erikwijmans/Pointnet2_PyTorch
+    cd Pointnet2_PyTorch
     # [IMPORTANT] comment these two lines of code:
     #   https://github.com/erikwijmans/Pointnet2_PyTorch/blob/master/pointnet2_ops_lib/pointnet2_ops/_ext-src/src/sampling_gpu.cu#L100-L101
-    cd Pointnet2_PyTorch
     pip install -r requirements.txt
     pip install -e .
 
@@ -44,12 +44,20 @@ You can run the following command to replay the interaction.
 
     python replay_data.py results/40147_StorageFurniture_0_pushing_0/result.json
 
-## Quick Test
-You can download the pre-trained model and use Jupyter Notebook to quickly visualize the result predictions.
+If you want to run on a headless server, simple put `xvfb-run -a ` before any code command that runs the SAPIEN simulator.
+Install the `xvfb` tool on your server if not installed.
 
 ## Generate Offline Training Data
 Before training the network, we need to collect a large set of interaction trials via random exploration.
 
+    bash scripts/run_gen_offline_data.sh
+
+This file generates data for a single cabinet example under the *pushing* primitive action. 
+You can modify the content of the above file to generate data for different settings.
+Also, please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
+Check the other parameters for more information.
+
+    python gen_offline_data.py --help
 
 ## 3D Experiment
 To train the network from scratch, run

@@ -53,21 +53,17 @@ class DataGen(object):
         succ_todos = []
         for todo in todos:
             if todo[0] == 'COLLECT':
-                cmd = 'xvfb-run -a python collect_data.py %s %s %d %s %s --trial_id %d --random_seed %d --no_gui > /dev/null 2>&1' \
+                cmd = 'python collect_data.py %s %s %d %s --out_dir %s --trial_id %d --random_seed %d --no_gui > /dev/null 2>&1' \
                         % (todo[1], todo[2], todo[3], todo[4], todo[5], todo[6], todo[7])
                 folder_name = todo[5]
                 job_name = '%s_%s_%d_%s_%s' % (todo[1], todo[2], todo[3], todo[4], todo[6])
             elif todo[0] == 'RECOLLECT':
-                if pid < 10:
-                    cmd = 'xvfb-run -a python recollect_data_pcpnet0.py %s %s %s --random_seed %d --no_gui --x %d --y %d --dir1 %s --dir2 %s > /dev/null 2>&1' \
-                            % (todo[1], todo[2], todo[3], todo[4], todo[5], todo[6], todo[7], todo[8])
-                else:
-                    cmd = 'xvfb-run -a python recollect_data_pcpnet1.py %s %s %s --random_seed %d --no_gui --x %d --y %d --dir1 %s --dir2 %s > /dev/null 2>&1' \
-                            % (todo[1], todo[2], todo[3], todo[4], todo[5], todo[6], todo[7], todo[8])
+                cmd = 'python recollect_data.py %s %s %s --random_seed %d --no_gui --x %d --y %d --dir1 %s --dir2 %s > /dev/null 2>&1' \
+                        % (todo[1], todo[2], todo[3], todo[4], todo[5], todo[6], todo[7], todo[8])
                 folder_name = todo[3]
                 job_name = todo[2]
             elif todo[0] == 'CHECKCOLLECT':
-                cmd = 'xvfb-run -a python checkcollect_data.py %s %s %s --random_seed %d --no_gui --x %d --y %d --dir1 %s --dir2 %s > /dev/null 2>&1' \
+                cmd = 'python checkcollect_data.py %s %s %s --random_seed %d --no_gui --x %d --y %d --dir1 %s --dir2 %s > /dev/null 2>&1' \
                         % (todo[1], todo[2], todo[3], todo[4], todo[5], todo[6], todo[7], todo[8])
                 folder_name = todo[3]
                 job_name = todo[2]

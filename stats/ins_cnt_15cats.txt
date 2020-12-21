@@ -1,0 +1,15 @@
+Box 28 12
+Bucket 36 10
+Door 36 10
+Faucet 84 4
+Kettle 29 12
+KitchenPot 25 14
+Microwave 16 22
+Refrigerator 44 8
+Safe 30 12
+StorageFurniture 345 1
+Switch 70 5
+Table 101 3
+TrashCan 70 5
+WashingMachine 17 20
+Window 58 6

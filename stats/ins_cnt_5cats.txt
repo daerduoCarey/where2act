@@ -1,0 +1,5 @@
+Bucket 36 3
+KitchenPot 25 4
+Safe 30 3
+Table 101 1
+WashingMachine 17 6

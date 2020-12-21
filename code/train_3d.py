@@ -1,6 +1,5 @@
 """
-    Train ActionScore-Actor-Critic simultaneously
-    Online random data is generated offline and loaded
+    Train the full model
 """
 
 import os
@@ -18,8 +17,8 @@ from PIL import Image
 from subprocess import call
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-from datagen_v1 import DataGen
-from dataset_v1 import SAPIENVisionDataset
+from datagen import DataGen
+from data import SAPIENVisionDataset
 import utils
 
 sys.path.append(os.path.join(BASE_DIR, '../utils'))
@@ -31,13 +30,13 @@ from pointnet2_ops.pointnet2_utils import furthest_point_sample
 def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data_list):
     # create training and validation datasets and data loaders
     data_features = ['pcs', 'pc_pxids', 'pc_movables', 'gripper_img_target', 'gripper_direction_camera', 'gripper_forward_direction_camera', \
-            'result', 'cur_dir', 'shape_id', 'trial_id', 'primact_type', 'primact_one_hot', 'is_original']
+            'result', 'cur_dir', 'shape_id', 'trial_id', 'primact_type', 'is_original']
      
     # load network model
     model_def = utils.get_model_module(conf.model_version)
 
     # create models
-    network = model_def.Network(conf.feat_dim, conf.rv_dim, conf.rv_cnt, len(conf.primact_types))
+    network = model_def.Network(conf.feat_dim, conf.rv_dim, conf.rv_cnt)
     utils.printout(conf.flog, '\n' + str(network) + '\n')
     
     # load pretrained critic
@@ -66,7 +65,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
 
     # create logs
     if not conf.no_console_log:
-        header = '     Time    Epoch     Dataset    Iteration    Progress(%)       LR    CriticLoss  ActorCovLoss  ActorFidLoss  ActScoreLoss   TotalLoss'
+        header = '     Time    Epoch     Dataset    Iteration    Progress(%)       LR    CriticLoss  ActorCovLoss  ActScoreLoss   TotalLoss'
     if not conf.no_tb_log:
         # https://github.com/lanpa/tensorboard-pytorch
         from tensorboardX import SummaryWriter
@@ -235,12 +234,9 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                     random_dirs1 = F.normalize(random_up, dim=1).float()
                     random_dirs2 = F.normalize(random_forward, dim=1).float()
 
-                    # get primact_one_hots
-                    primact_one_hots = torch.cat(batch[data_features.index('primact_one_hot')], dim=0).to(conf.device)     # B x primact_cnt
-
                     # test over the entire image
-                    whole_pc_scores1 = network.inference_whole_pc(whole_feats, random_dirs1, random_dirs2, primact_one_hots)     # B x N
-                    whole_pc_scores2 = network.inference_whole_pc(whole_feats, -random_dirs1, random_dirs2, primact_one_hots)     # B x N
+                    whole_pc_scores1 = network.inference_whole_pc(whole_feats, random_dirs1, random_dirs2)     # B x N
+                    whole_pc_scores2 = network.inference_whole_pc(whole_feats, -random_dirs1, random_dirs2)     # B x N
 
                     # add to the sample_succ_list if wanted
                     ss_cur_dir = batch[data_features.index('cur_dir')]
@@ -331,28 +327,25 @@ def forward(batch, data_features, network, conf, \
 
     input_dirs1 = torch.cat(batch[data_features.index('gripper_direction_camera')], dim=0).to(conf.device)     # B x 3
     input_dirs2 = torch.cat(batch[data_features.index('gripper_forward_direction_camera')], dim=0).to(conf.device)     # B x 3
-    primact_one_hots = torch.cat(batch[data_features.index('primact_one_hot')], dim=0).to(conf.device)     # B x primact_cnt
     
     # prepare gt
     gt_result = torch.Tensor(batch[data_features.index('result')]).long().to(conf.device)     # B
     gripper_img_target = torch.cat(batch[data_features.index('gripper_img_target')], dim=0).to(conf.device)     # B x 3 x H x W
 
     # forward through the network
-    critic_loss_per_data, actor_coverage_loss_per_data, actor_fidelity_loss_per_data, action_score_loss_per_data, \
+    critic_loss_per_data, actor_coverage_loss_per_data, action_score_loss_per_data, \
             pred_result_logits, pred_whole_feats = \
-                network(input_pcs, input_dirs1, input_dirs2, primact_one_hots, gt_result)
+                network(input_pcs, input_dirs1, input_dirs2, gt_result)
  
     # for each type of loss, compute avg loss per batch
     critic_loss = critic_loss_per_data.mean()
     # for actor coverage, only train for gt_result=True pixels
     actor_coverage_loss = (actor_coverage_loss_per_data * gt_result).sum() / (gt_result.sum() + 1e-12)
-    actor_fidelity_loss = actor_fidelity_loss_per_data.mean()
     action_score_loss = action_score_loss_per_data.mean()
 
     # compute total loss
     total_loss = critic_loss * conf.loss_weight_critic + \
             actor_coverage_loss * conf.loss_weight_actor_coverage + \
-            actor_fidelity_loss * conf.loss_weight_actor_fidelity + \
             action_score_loss * conf.loss_weight_action_score
 
     # display information
@@ -372,7 +365,6 @@ def forward(batch, data_features, network, conf, \
                 f'''{lr:>5.2E} '''
                 f'''{critic_loss.item():>10.5f}'''
                 f'''{actor_coverage_loss.item():>10.5f}'''
-                f'''{actor_fidelity_loss.item():>10.5f}'''
                 f'''{action_score_loss.item():>10.5f}'''
                 f'''{total_loss.item():>10.5f}''')
             conf.flog.flush()
@@ -381,7 +373,6 @@ def forward(batch, data_features, network, conf, \
         if log_tb and tb_writer is not None:
             tb_writer.add_scalar('critic_loss', critic_loss.item(), step)
             tb_writer.add_scalar('actor_coverage_loss', actor_coverage_loss.item(), step)
-            tb_writer.add_scalar('actor_fidelity_loss', actor_fidelity_loss.item(), step)
             tb_writer.add_scalar('action_score_loss', action_score_loss.item(), step)
             tb_writer.add_scalar('total_loss', total_loss.item(), step)
             tb_writer.add_scalar('lr', lr, step)
@@ -410,13 +401,11 @@ def forward(batch, data_features, network, conf, \
                     Image.fromarray(cur_gripper_img_target).save(os.path.join(gripper_img_target_dir, fn))
                     with open(os.path.join(info_dir, fn.replace('.png', '.txt')), 'w') as fout:
                         fout.write('primact_type: %s\n' % batch[data_features.index('primact_type')][i])
-                        fout.write('primact_one_hot: %s\n' % str(primact_one_hots[i].cpu().numpy().tolist()))
                         fout.write('cur_dir: %s\n' % batch[data_features.index('cur_dir')][i])
                         fout.write('pred: %s\n' % utils.print_true_false(pred_result_logits[i].argmax().cpu().numpy()))
                         fout.write('gt: %s\n' % utils.print_true_false(gt_result[i].cpu().numpy()))
                         fout.write('critic_loss: %f\n' % critic_loss_per_data[i].item())
                         fout.write('actor_coverage_loss: %f\n' % actor_coverage_loss_per_data[i].item())
-                        fout.write('actor_fidelity_loss: %f\n' % actor_fidelity_loss_per_data[i].item())
                         fout.write('action_score_loss: %f\n' % action_score_loss_per_data[i].item())
                 
             if batch_ind == conf.num_batch_every_visu - 1:
@@ -481,7 +470,6 @@ if __name__ == '__main__':
     # loss weights
     parser.add_argument('--loss_weight_critic', type=float, default=1.0, help='loss weight')
     parser.add_argument('--loss_weight_actor_coverage', type=float, default=1.0, help='loss weight')
-    parser.add_argument('--loss_weight_actor_fidelity', type=float, default=1.0, help='loss weight')
     parser.add_argument('--loss_weight_action_score', type=float, default=100.0, help='loss weight')
 
     # logging
@@ -562,7 +550,7 @@ if __name__ == '__main__':
 
     # backup python files used for this training
     if not conf.resume:
-        os.system('cp datagen_v1.py dataset_v1.py models/%s.py %s %s' % (conf.model_version, __file__, conf.exp_dir))
+        os.system('cp datagen.py data.py models/%s.py %s %s' % (conf.model_version, __file__, conf.exp_dir))
      
     # set training device
     device = torch.device(conf.device)

@@ -94,15 +94,15 @@ class PointNet2SemSegSSG(PointNet2ClassificationSSG):
 
 
 class Critic(nn.Module):
-    def __init__(self, feat_dim, primact_cnt):
+    def __init__(self, feat_dim):
         super(Critic, self).__init__()
 
-        self.mlp1 = nn.Linear(feat_dim+3+3+primact_cnt, feat_dim)
+        self.mlp1 = nn.Linear(feat_dim+3+3, feat_dim)
         self.mlp2 = nn.Linear(feat_dim, 1)
 
         self.BCELoss = nn.BCEWithLogitsLoss(reduction='none')
 
-    # pixel_feats B x F, query_fats: B x (6+primact_cnt)
+    # pixel_feats B x F, query_fats: B x 6
     # output: B
     def forward(self, pixel_feats, query_feats):
         net = torch.cat([pixel_feats, query_feats], dim=-1)
@@ -117,35 +117,35 @@ class Critic(nn.Module):
 
 
 class Network(nn.Module):
-    def __init__(self, feat_dim, primact_cnt):
+    def __init__(self, feat_dim):
         super(Network, self).__init__()
         
         self.pointnet2 = PointNet2SemSegSSG({'feat_dim': feat_dim})
         
-        self.critic = Critic(feat_dim, primact_cnt)
+        self.critic = Critic(feat_dim)
 
     # pcs: B x N x 3 (float), with the 0th point to be the query point
     # pred_result_logits: B, whole_feats: B x F x N
-    def forward(self, pcs, dirs1, dirs2, primact_one_hots):
+    def forward(self, pcs, dirs1, dirs2):
         pcs = pcs.repeat(1, 1, 2)
         whole_feats = self.pointnet2(pcs)
 
         net = whole_feats[:, :, 0]
 
-        input_queries = torch.cat([dirs1, dirs2, primact_one_hots], dim=1)
+        input_queries = torch.cat([dirs1, dirs2], dim=1)
 
         pred_result_logits = self.critic(net, input_queries)
 
         return pred_result_logits, whole_feats
 
-    def inference_whole_pc(self, feats, dirs1, dirs2, primact_one_hots):
+    def inference_whole_pc(self, feats, dirs1, dirs2):
         num_pts = feats.shape[-1]
         batch_size = feats.shape[0]
 
         feats = feats.permute(0, 2, 1)  # B x N x F
         feats = feats.reshape(batch_size*num_pts, -1)
 
-        input_queries = torch.cat([dirs1, dirs2, primact_one_hots], dim=-1)
+        input_queries = torch.cat([dirs1, dirs2], dim=-1)
         input_queries = input_queries.unsqueeze(dim=1).repeat(1, num_pts, 1)
         input_queries = input_queries.reshape(batch_size*num_pts, -1)
 
@@ -156,13 +156,13 @@ class Network(nn.Module):
 
         return soft_pred_results
 
-    def inference(self, pcs, dirs1, dirs2, primact_one_hots):
+    def inference(self, pcs, dirs1, dirs2):
         pcs = pcs.repeat(1, 1, 2)
         whole_feats = self.pointnet2(pcs)
 
         net = whole_feats[:, :, 0]
 
-        input_queries = torch.cat([dirs1, dirs2, primact_one_hots], dim=1)
+        input_queries = torch.cat([dirs1, dirs2], dim=1)
 
         pred_result_logits = self.critic(net, input_queries)
 

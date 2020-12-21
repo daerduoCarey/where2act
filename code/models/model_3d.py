@@ -94,32 +94,31 @@ class PointNet2SemSegSSG(PointNet2ClassificationSSG):
 
 
 class ActionScore(nn.Module):
-    def __init__(self, feat_dim, primact_cnt):
+    def __init__(self, feat_dim):
         super(ActionScore, self).__init__()
 
-        self.mlp1 = nn.Linear(feat_dim+primact_cnt, feat_dim)
+        self.mlp1 = nn.Linear(feat_dim, feat_dim)
         self.mlp2 = nn.Linear(feat_dim, 1)
 
-    # pixel_feats B x F, primact_one_hots:, B x CNT
+    # feats B x F
     # output: B
-    def forward(self, pixel_feats, primact_one_hots):
-        feats = torch.cat([pixel_feats, primact_one_hots], dim=1)
+    def forward(self, feats):
         net = F.leaky_relu(self.mlp1(feats))
         net = torch.sigmoid(self.mlp2(net)).squeeze(1)
         return net
  
 
 class Actor(nn.Module):
-    def __init__(self, feat_dim, rv_dim, primact_cnt):
+    def __init__(self, feat_dim, rv_dim):
         super(Actor, self).__init__()
 
-        self.mlp1 = nn.Linear(feat_dim+rv_dim+primact_cnt, feat_dim)
+        self.mlp1 = nn.Linear(feat_dim+rv_dim, feat_dim)
         self.mlp2 = nn.Linear(feat_dim, 3+3)
     
-    # pixel_feats B x F, rvs B x RV_DIM, primact_one_hots B x primact_cnt
+    # pixel_feats B x F, rvs B x RV_DIM
     # output: B x 6
-    def forward(self, pixel_feats, rvs, primact_one_hots):
-        net = torch.cat([pixel_feats, rvs, primact_one_hots], dim=-1)
+    def forward(self, pixel_feats, rvs):
+        net = torch.cat([pixel_feats, rvs], dim=-1)
         net = F.leaky_relu(self.mlp1(net))
         net = self.mlp2(net).reshape(-1, 3, 2)
         net = self.bgs(net)[:, :, :2].reshape(-1, 6)
@@ -152,15 +151,15 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, feat_dim, primact_cnt):
+    def __init__(self, feat_dim):
         super(Critic, self).__init__()
 
-        self.mlp1 = nn.Linear(feat_dim+3+3+primact_cnt, feat_dim)
+        self.mlp1 = nn.Linear(feat_dim+3+3, feat_dim)
         self.mlp2 = nn.Linear(feat_dim, 1)
 
         self.BCELoss = nn.BCEWithLogitsLoss(reduction='none')
 
-    # pixel_feats B x F, query_fats: B x (6+primact_cnt)
+    # pixel_feats B x F, query_fats: B x 6
     # output: B
     def forward(self, pixel_feats, query_feats):
         net = torch.cat([pixel_feats, query_feats], dim=-1)
@@ -175,7 +174,7 @@ class Critic(nn.Module):
 
 
 class Network(nn.Module):
-    def __init__(self, feat_dim, rv_dim, rv_cnt, primact_cnt):
+    def __init__(self, feat_dim, rv_dim, rv_cnt):
         super(Network, self).__init__()
 
         self.feat_dim = feat_dim
@@ -184,13 +183,13 @@ class Network(nn.Module):
         
         self.pointnet2 = PointNet2SemSegSSG({'feat_dim': feat_dim})
         
-        self.critic = Critic(feat_dim, primact_cnt)
-        self.critic_copy = Critic(feat_dim, primact_cnt)
-        self.actor = Actor(feat_dim, rv_dim, primact_cnt)
-        self.action_score = ActionScore(feat_dim, primact_cnt)
+        self.critic = Critic(feat_dim)
+        self.critic_copy = Critic(feat_dim)
+        self.actor = Actor(feat_dim, rv_dim)
+        self.action_score = ActionScore(feat_dim)
 
     # pcs: B x N x 3 (float), with the 0th point to be the query point
-    def forward(self, pcs, dirs1, dirs2, primact_one_hots, gt_result):
+    def forward(self, pcs, dirs1, dirs2, gt_result):
         pcs = pcs.repeat(1, 1, 2)
         batch_size = pcs.shape[0]
 
@@ -204,7 +203,7 @@ class Network(nn.Module):
         net = whole_feats[:, :, 0]  # B x F
 
         input_s6d = torch.cat([dirs1, dirs2], dim=1)
-        input_queries = torch.cat([input_s6d, primact_one_hots], dim=1)
+        input_queries = input_s6d
 
         # train critic
         pred_result_logits = self.critic(net, input_queries)
@@ -214,35 +213,34 @@ class Network(nn.Module):
         rvs = torch.randn(batch_size, self.rv_cnt, self.rv_dim).float().to(net.device)
         expanded_net = net.unsqueeze(dim=1).repeat(1, self.rv_cnt, 1).reshape(batch_size*self.rv_cnt, -1)
         expanded_rvs = rvs.reshape(batch_size*self.rv_cnt, -1)
-        expanded_primact_one_hots = primact_one_hots.unsqueeze(dim=1).repeat(1, self.rv_cnt, 1).reshape(batch_size*self.rv_cnt, -1)
-        expanded_pred_s6d = self.actor(expanded_net, expanded_rvs, expanded_primact_one_hots)
+        expanded_pred_s6d = self.actor(expanded_net, expanded_rvs)
         expanded_input_s6d = input_s6d.unsqueeze(dim=1).repeat(1, self.rv_cnt, 1).reshape(batch_size*self.rv_cnt, -1)
         expanded_actor_coverage_loss_per_rv = self.actor.get_6d_rot_loss(expanded_pred_s6d, expanded_input_s6d)
         actor_coverage_loss_per_rv = expanded_actor_coverage_loss_per_rv.reshape(batch_size, self.rv_cnt)
         actor_coverage_loss_per_data = actor_coverage_loss_per_rv.min(dim=1)[0]
 
         with torch.no_grad():
-            expanded_queries = torch.cat([expanded_pred_s6d, expanded_primact_one_hots], dim=1)
+            expanded_queries = expanded_pred_s6d
             expanded_proposal_results_logits = self.critic_copy(expanded_net.detach(), expanded_queries)
             expanded_proposal_succ_scores = torch.sigmoid(expanded_proposal_results_logits)
             proposal_succ_scores = expanded_proposal_succ_scores.reshape(batch_size, self.rv_cnt)
             avg_proposal_succ_scores = proposal_succ_scores.mean(dim=1)
 
         # train action_score
-        pred_action_scores = self.action_score(net, primact_one_hots)
+        pred_action_scores = self.action_score(net)
         action_score_loss_per_data = (pred_action_scores - avg_proposal_succ_scores)**2
 
-        return critic_loss_per_data, actor_coverage_loss_per_data, torch.zeros_like(actor_coverage_loss_per_data), action_score_loss_per_data, pred_result_logits, whole_feats
+        return critic_loss_per_data, actor_coverage_loss_per_data, action_score_loss_per_data, pred_result_logits, whole_feats
         
     # for sample_succ
-    def inference_whole_pc(self, feats, dirs1, dirs2, primact_one_hots):
+    def inference_whole_pc(self, feats, dirs1, dirs2):
         num_pts = feats.shape[-1]
         batch_size = feats.shape[0]
 
         feats = feats.permute(0, 2, 1)  # B x N x F
         feats = feats.reshape(batch_size*num_pts, -1)
 
-        input_queries = torch.cat([dirs1, dirs2, primact_one_hots], dim=-1)
+        input_queries = torch.cat([dirs1, dirs2], dim=-1)
         input_queries = input_queries.unsqueeze(dim=1).repeat(1, num_pts, 1)
         input_queries = input_queries.reshape(batch_size*num_pts, -1)
 
@@ -253,7 +251,7 @@ class Network(nn.Module):
 
         return soft_pred_results
     
-    def inference_action_score(self, pcs, primact_one_hots):
+    def inference_action_score(self, pcs):
         pcs = pcs.repeat(1, 1, 2)
         batch_size = pcs.shape[0]
         num_point = pcs.shape[1]
@@ -261,13 +259,12 @@ class Network(nn.Module):
         net = self.pointnet2(pcs)
 
         net = net.permute(0, 2, 1).reshape(batch_size*num_point, -1)
-        expanded_primact_one_hots = primact_one_hots.unsqueeze(dim=1).repeat(1, num_point, 1).reshape(batch_size*num_point, -1)
         
-        pred_action_scores = self.action_score(net, expanded_primact_one_hots)
+        pred_action_scores = self.action_score(net)
         pred_action_scores = pred_action_scores.reshape(batch_size, num_point)
         return pred_action_scores
 
-    def inference_actor(self, pcs, primact_one_hots):
+    def inference_actor(self, pcs):
         pcs = pcs.repeat(1, 1, 2)
         batch_size = pcs.shape[0]
 
@@ -277,17 +274,16 @@ class Network(nn.Module):
         rvs = torch.randn(batch_size, self.rv_cnt, self.rv_dim).float().to(net.device)
         expanded_net = net.unsqueeze(dim=1).repeat(1, self.rv_cnt, 1).reshape(batch_size*self.rv_cnt, -1)
         expanded_rvs = rvs.reshape(batch_size*self.rv_cnt, -1)
-        expanded_primact_one_hots = primact_one_hots.unsqueeze(dim=1).repeat(1, self.rv_cnt, 1).reshape(batch_size*self.rv_cnt, -1)
-        expanded_pred_s6d = self.actor(expanded_net, expanded_rvs, expanded_primact_one_hots)
+        expanded_pred_s6d = self.actor(expanded_net, expanded_rvs)
         pred_s6d = expanded_pred_s6d.reshape(batch_size, self.rv_cnt, 6)
         return pred_s6d
     
-    def inference_critic(self, pcs, dirs1, dirs2, primact_one_hots, abs_val=False):
+    def inference_critic(self, pcs, dirs1, dirs2, abs_val=False):
         pcs = pcs.repeat(1, 1, 2)
         whole_feats = self.pointnet2(pcs)
         net = whole_feats[:, :, 0]
 
-        input_queries = torch.cat([dirs1, dirs2, primact_one_hots], dim=1)
+        input_queries = torch.cat([dirs1, dirs2], dim=1)
         pred_result_logits = self.critic(net, input_queries)
         if abs_val:
             pred_results = torch.sigmoid(pred_result_logits)

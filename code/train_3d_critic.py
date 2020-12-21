@@ -1,8 +1,5 @@
 """
-    Adapted from ../unet_exps_online_v1/train_pnpp_critic_v1-sample-succ-v2.py
-        make it be able to handle multiple primact_types
-
-    Online random data is generated offline and loaded
+    Train the Action Scoring Module only
 """
 
 import os
