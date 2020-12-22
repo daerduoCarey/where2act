@@ -32,7 +32,7 @@ Finally, run the following to install other packages.
 to install the other dependencies.
 
 For visualization, please install blender v2.79 and put the executable in your environment path.
-Also, the prediction result can be visualized using MeshLab.
+Also, the prediction result can be visualized using MeshLab or the *RenderShape* tool in [Thea](https://github.com/sidch/thea).
 
 ## Simulator
 You can run the following command to test and visualize a random interation in the simulation environment.
@@ -79,6 +79,7 @@ To evaluate and visualize the results, run
 to visualize the Action Scoring Module predictions (Fig. 4 in the main paper).
 This script use a random viewpoint and a random interaction direction, 
 so you can run multiple times to get different results.
+The results are generated under `logs/[exp-folder]/[result-folder]/`.
 
 Please use 
 
@@ -87,4 +88,5 @@ Please use
 to visualize the Actionability Module and Action Proposal Module results (Fig. 1, 5 in the main paper).
 This script will generate a GIF for all proposed successful interaction orientations for a randomly sampled pixel for interaction, 
 so you can run multiple times to get different results.
+The results are generated under `logs/[exp-folder]/[result-folder]/`.
 

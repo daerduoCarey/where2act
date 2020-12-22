@@ -13,6 +13,7 @@ from colors import colors
 colors = np.array(colors, dtype=np.float32)
 import matplotlib.pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
+from subprocess import call
 
 
 def force_mkdir(folder):
@@ -90,10 +91,37 @@ def img_resize(data):
     data += mini
     return data
 
+def export_pts(out, v):
+    with open(out, 'w') as fout:
+        for i in range(v.shape[0]):
+            fout.write('%f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2]))
+
+def export_label(out, l):
+    with open(out, 'w') as fout:
+        for i in range(l.shape[0]):
+            fout.write('%f\n' % (l[i]))
+
+def export_pts_label(out, v, l):
+    with open(out, 'w') as fout:
+        for i in range(l.shape[0]):
+            fout.write('%f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], l[i]))
+
+def render_pts_label_png(out, v, l):
+    export_pts(out+'.pts', v)
+    export_label(out+'.label', l)
+    export_pts_label(out+'.feats', v, l)
+    cmd = 'RenderShape %s.pts -f %s.feats %s.png 448 448 -v 1,0,0,-5,0,0,0,0,1 >> /dev/null' % (out, out, out)
+    call(cmd, shell=True)
+
 def export_pts_color_obj(out, v, c):
     with open(out+'.obj', 'w') as fout:
         for i in range(v.shape[0]):
             fout.write('v %f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
+
+def export_pts_color_pts(out, v, c):
+    with open(out+'.pts', 'w') as fout:
+        for i in range(v.shape[0]):
+            fout.write('%f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
 
 def load_checkpoint(models, model_names, dirname, epoch=None, optimizers=None, optimizer_names=None, strict=True):
     if len(models) != len(model_names) or (optimizers is not None and len(optimizers) != len(optimizer_names)):

@@ -8,8 +8,9 @@ import torch
 import torch.nn.functional as F
 import utils
 from utils import get_global_position_from_camera
+import cv2
 from sapien.core import Pose
-from env_opengl import Env
+from env import Env
 from camera import Camera
 from robots.panda_robot import Robot
 
@@ -22,16 +23,13 @@ cmap = plt.cm.get_cmap("jet")
 parser = ArgumentParser()
 parser.add_argument('--exp_name', type=str, help='name of the training run')
 parser.add_argument('--shape_id', type=str, help='shape id')
+parser.add_argument('--model_epoch', type=int, help='epoch')
 parser.add_argument('--model_version', type=str, help='model version')
 parser.add_argument('--result_suffix', type=str, default='nothing')
 parser.add_argument('--device', type=str, default='cuda:0', help='cpu or cuda:x for using cuda on GPU number x')
 parser.add_argument('--overwrite', action='store_true', default=False, help='overwrite if result_dir exists [default: False]')
 eval_conf = parser.parse_args()
 
-
-for item in os.listdir(os.path.join('logs', eval_conf.exp_name, 'ckpts')):
-    if item.endswith('-network.pth'):
-        eval_conf.model_epoch = int(item.split('-')[0])
 
 # load train config
 train_conf = torch.load(os.path.join('logs', eval_conf.exp_name, 'conf.pth'))
@@ -130,6 +128,10 @@ if len(xs) == 0:
     exit(1)
 idx = np.random.randint(len(xs))
 x, y = xs[idx], ys[idx]
+Image.fromarray((rgb*255).astype(np.uint8)).save(os.path.join(result_dir, 'rgb.png'))
+marked_rgb = (rgb*255).astype(np.uint8)
+marked_rgb = cv2.circle(marked_rgb, (y, x), radius=3, color=(0, 0, 255), thickness=5)
+Image.fromarray(marked_rgb).save(os.path.join(result_dir, 'point_to_interact.png'))
 
 # get pixel 3D position (world)
 position_world = get_global_position_from_camera(cam, depth, y, x)[:3]
@@ -222,11 +224,12 @@ with torch.no_grad():
     result = torch.sigmoid(net).cpu().numpy()
     result *= pc_movable
 
-    fn = os.path.join(result_dir, 'action')
+    fn = os.path.join(result_dir, 'pred')
     resultcolors = cmap(result)[:, :3]
     pccolors = pccolors * (1 - np.expand_dims(result, axis=-1)) + resultcolors * np.expand_dims(result, axis=-1)
+    utils.export_pts_color_pts(fn,  pc[0].cpu().numpy(), pccolors)
     utils.export_pts_color_obj(fn,  pc[0].cpu().numpy(), pccolors)
-    utils.render_pts_color_png(fn,  pc[0].cpu().numpy(), pccolors)
+    utils.render_pts_label_png(fn,  pc[0].cpu().numpy(), result)
 
 # close env
 env.close()

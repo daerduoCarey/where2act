@@ -14,6 +14,6 @@ python train_3d.py \
     --num_interaction_data_offline 10 \
     --num_interaction_data 1 \
     --sample_succ \
-    --pretrained_critic_ckpt ./logs/xxx.pth \
+    --pretrained_critic_ckpt ./logs/exp-model_3d_critic-pushing-StorageFurniture-train_3d_critic_single_cabinet/ckpts/15-network.pth \
     --overwrite
 

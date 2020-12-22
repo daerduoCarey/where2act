@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import utils
 from utils import get_global_position_from_camera
 from sapien.core import Pose
-from env_opengl import Env
+from env import Env
 from camera import Camera
 from robots.panda_robot import Robot
 import imageio
@@ -21,6 +21,7 @@ from pointnet2_ops.pointnet2_utils import furthest_point_sample
 parser = ArgumentParser()
 parser.add_argument('--exp_name', type=str, help='name of the training run')
 parser.add_argument('--model_version', type=str)
+parser.add_argument('--model_epoch', type=int, help='epoch')
 parser.add_argument('--shape_id', type=str, help='shape id')
 parser.add_argument('--result_suffix', type=str, default='nothing')
 parser.add_argument('--device', type=str, default='cuda:0', help='cpu or cuda:x for using cuda on GPU number x')
@@ -30,10 +31,6 @@ eval_conf = parser.parse_args()
 
 # load train config
 train_conf = torch.load(os.path.join('logs', eval_conf.exp_name, 'conf.pth'))
-
-for item in os.listdir(os.path.join('logs', eval_conf.exp_name, 'ckpts')):
-    if item.endswith('-network.pth'):
-        eval_conf.model_epoch = int(item.split('-')[0])
 
 # load model
 model_def = utils.get_model_module(eval_conf.model_version)
@@ -187,18 +184,18 @@ with torch.no_grad():
     pred_Rs = network.actor.bgs(pred_6d.reshape(-1, 3, 2))    # RV_CNT x 3 x 3
     pred_action_score_map = network.inference_action_score(pc)[0] # N
     pred_action_score_map = pred_action_score_map.cpu().numpy()
-    #pred_action_score_map[pred_action_score_map<0.75]=0
 
     # save action_score_map
     fn = os.path.join(result_dir, 'action_score_map_full')
-    utils.render_pts_color_png(fn,  pc[0].cpu().numpy(), pccolors)
+    utils.render_pts_label_png(fn,  pc[0].cpu().numpy(), pred_action_score_map)
     
     pred_action_score_map *= pc_movable
     fn = os.path.join(result_dir, 'action_score_map')
-    utils.render_pts_color_png(fn,  pc[0].cpu().numpy(), pccolors)
+    utils.render_pts_label_png(fn,  pc[0].cpu().numpy(), pred_action_score_map)
 
     fn = os.path.join(result_dir, 'input')
     utils.export_pts_color_pts(fn,  pc[0].cpu().numpy(), pccolors)
+    utils.export_pts_color_obj(fn,  pc[0].cpu().numpy(), pccolors)
 
     # show actor-results with critic-preds
     succ_images = []
@@ -231,11 +228,20 @@ with torch.no_grad():
         else:
             fimg.save(os.path.join(result_dir, 'FAIL-%d.png' % idx))
 
-        # export SUCC GIF Image
-        try:
-            imageio.mimsave(os.path.join(result_dir, 'all_succ.gif'), succ_images)
-        except:
-            pass
+    for i in range(train_conf.rv_cnt):
+        gripper_direction_camera = pred_Rs[i:i+1, :, 0]
+        gripper_forward_direction_camera = pred_Rs[i:i+1, :, 1]
+        
+        result_score = network.inference_critic(pc, gripper_direction_camera, gripper_forward_direction_camera, abs_val=True).item()
+        result = (result_score > 0.5)
+
+        plot_figure(i, gripper_direction_camera[0].cpu().numpy(), gripper_forward_direction_camera[0].cpu().numpy(), result)
+        
+    # export SUCC GIF Image
+    try:
+        imageio.mimsave(os.path.join(result_dir, 'all_succ.gif'), succ_images)
+    except:
+        pass
 
 # close env
 env.close()
