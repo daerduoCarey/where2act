@@ -102,7 +102,7 @@ with h5py.File(json_fn.replace('result.json', 'cam_XYZA.h5'), 'r') as fin:
     cam_XYZA_id1 = fin['id1'][:].astype(np.int64)
     cam_XYZA_id2 = fin['id2'][:].astype(np.int64)
     cam_XYZA_pts = fin['pc'][:].astype(np.float32)
-    cam_XYZA = cam.compute_XYZA_matrix(cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts, depth.shape[0], depth.shape[1])
+cam_XYZA = cam.compute_XYZA_matrix(cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts, depth.shape[0], depth.shape[1])
 position_cam = cam_XYZA[x, y, :3]
 position_cam_xyz1 = np.ones((4), dtype=np.float32)
 position_cam_xyz1[:3] = position_cam

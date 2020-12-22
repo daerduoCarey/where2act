@@ -7,6 +7,6 @@ progressbar2
 requests
 scipy
 transforms3d
-tensorboard==2.4.0
-tensorboard-plugin-wit==1.7.0
-torch==1.7.0
+torch
+torchvision
+tensorboardX

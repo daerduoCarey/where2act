@@ -31,6 +31,9 @@ Finally, run the following to install other packages.
 
 to install the other dependencies.
 
+For visualization, please install blender v2.79 and put the executable in your environment path.
+Also, the prediction result can be visualized using MeshLab.
+
 ## Simulator
 You can run the following command to test and visualize a random interation in the simulation environment.
 
@@ -53,7 +56,7 @@ Before training the network, we need to collect a large set of interaction trial
 
     bash scripts/run_gen_offline_data.sh
 
-This file generates data for StorageFurniture training shapes under the *pushing* primitive action. 
+This file generates data for StorageFurniture under the *pushing* primitive action. 
 You can modify the content of the above file to generate data for different settings.
 Also, please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
 Check the other parameters for more information.

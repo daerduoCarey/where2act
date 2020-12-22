@@ -5,6 +5,7 @@
 """
 
 import os
+import h5py
 import torch
 import torch.utils.data as data
 import numpy as np
@@ -12,6 +13,7 @@ from PIL import Image
 import json
 from progressbar import ProgressBar
 from pyquaternion import Quaternion
+from camera import Camera
 
 
 class SAPIENVisionDataset(data.Dataset):
@@ -191,7 +193,11 @@ class SAPIENVisionDataset(data.Dataset):
              
             elif feat == 'pcs':
                 x, y = ori_pixel_ids[0], ori_pixel_ids[1]
-                out = np.load(os.path.join(cur_dir, 'cam_XYZA.npy'))
+                with h5py.File(os.path.join(cur_dir, 'cam_XYZA.h5'), 'r') as fin:
+                    cam_XYZA_id1 = fin['id1'][:].astype(np.int64)
+                    cam_XYZA_id2 = fin['id2'][:].astype(np.int64)
+                    cam_XYZA_pts = fin['pc'][:].astype(np.float32)
+                out = Camera.compute_XYZA_matrix(cam_XYZA_id1, cam_XYZA_id2, cam_XYZA_pts, 448, 448)
                 with Image.open(os.path.join(cur_dir, 'interaction_mask.png')) as fimg:
                     out3 = (np.array(fimg, dtype=np.float32) > 127)
                 pt = out[x, y, :3]

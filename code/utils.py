@@ -90,49 +90,10 @@ def img_resize(data):
     data += mini
     return data
 
-def export_pts(out, v):
-    with open(out, 'w') as fout:
-        for i in range(v.shape[0]):
-            fout.write('%f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2]))
-
-def export_label(out, l):
-    with open(out, 'w') as fout:
-        for i in range(l.shape[0]):
-            fout.write('%f\n' % (l[i]))
-
-def export_pts_label(out, v, l):
-    with open(out, 'w') as fout:
-        for i in range(l.shape[0]):
-            fout.write('%f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], l[i]))
-
-def convert_color_to_hexcode(rgb):
-    r, g, b = rgb
-    return '#%02x%02x%02x' % (int(r*255), int(g*255), int(b*255))
-
-def render_pts_color_png(out, v, c):
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(1, 1, 1, projection='3d')
-    ax.view_init(elev=0, azim=0)
-    for i in range(len(v.shape[0])):
-        ax.scatter(v[i, 0], v[i, 1], v[i, 2], color=(c[i, 0], c[i, 1], c[i, 2]), marker='.')
-    miv = np.min([np.min(v[:, 0]), np.min(v[:, 1]), np.min(v[:, 2])])
-    mav = np.max([np.max(v[:, 0]), np.max(v[:, 1]), np.max(v[:, 2])])
-    ax.set_xlim(miv, mav)
-    ax.set_ylim(miv, mav)
-    ax.set_zlim(miv, mav)
-    plt.tight_layout()
-    fig.savefig(out+'.png', bbox_inches='tight')
-    plt.close(fig)
-
 def export_pts_color_obj(out, v, c):
     with open(out+'.obj', 'w') as fout:
         for i in range(v.shape[0]):
             fout.write('v %f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
-
-def export_pts_color_pts(out, v, c):
-    with open(out+'.pts', 'w') as fout:
-        for i in range(v.shape[0]):
-            fout.write('%f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
 
 def load_checkpoint(models, model_names, dirname, epoch=None, optimizers=None, optimizer_names=None, strict=True):
     if len(models) != len(model_names) or (optimizers is not None and len(optimizers) != len(optimizer_names)):

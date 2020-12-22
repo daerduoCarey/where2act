@@ -67,7 +67,8 @@ class Camera(object):
             np.stack([x, y, np.ones_like(x)] * z[y, x], 0))).T
         return y, x, points
 
-    def compute_XYZA_matrix(self, id1, id2, pts, size1, size2):
+    @staticmethod
+    def compute_XYZA_matrix(id1, id2, pts, size1, size2):
         out = np.zeros((size1, size2, 4), dtype=np.float32)
         out[id1, id2, :3] = pts
         out[id1, id2, 3] = 1

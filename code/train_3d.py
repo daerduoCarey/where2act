@@ -15,16 +15,13 @@ import torch.utils.data
 import torch.nn.functional as F
 from PIL import Image
 from subprocess import call
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 from datagen import DataGen
 from data import SAPIENVisionDataset
 import utils
-
-sys.path.append(os.path.join(BASE_DIR, '../utils'))
-import render_using_blender as render_utils
-
 from pointnet2_ops.pointnet2_utils import furthest_point_sample
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, 'blender_utils'))
+import render_using_blender as render_utils
 
 
 def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data_list):
@@ -271,10 +268,6 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                                 whole_pc_score = whole_pc_score2
                                 random_dir1 = -random_dir1
 
-                            # visu sample-succ predictions
-                            fn = os.path.join(ss_cur_dir[i], 'sample-succ_mask')
-                            utils.export_pts_label_png(fn, whole_pcs[i].cpu().numpy(), whole_pc_score)
-                            
                             # sample <X, Y> on each img
                             pp = whole_pc_score + 1e-12
                             ptid = np.random.choice(len(whole_pc_score), 1, p=pp/pp.sum())
@@ -410,7 +403,7 @@ def forward(batch, data_features, network, conf, \
                 # visu html
                 utils.printout(conf.flog, 'Generating html visualization ...')
                 sublist = 'input_pc,gripper_img_target,info'
-                cmd = 'cd %s && python %s . 10 htmls %s %s > /dev/null' % (out_dir, os.path.join(BASE_DIR, '../utils/gen_html_hierachy_local.py'), sublist, sublist)
+                cmd = 'cd %s && python %s . 10 htmls %s %s > /dev/null' % (out_dir, os.path.join(BASE_DIR, 'gen_html_hierachy_local.py'), sublist, sublist)
                 call(cmd, shell=True)
                 utils.printout(conf.flog, 'DONE')
 
@@ -487,7 +480,7 @@ if __name__ == '__main__':
 
     ### prepare before training
     # make exp_name
-    conf.exp_name = f'finalexp-{conf.model_version}-{conf.primact_type}-{conf.category_types}-{conf.exp_suffix}'
+    conf.exp_name = f'exp-{conf.model_version}-{conf.primact_type}-{conf.category_types}-{conf.exp_suffix}'
         
     if conf.overwrite and conf.resume:
         raise ValueError('ERROR: cannot specify both --overwrite and --resume!')
