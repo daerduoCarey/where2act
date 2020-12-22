@@ -25,7 +25,8 @@ Then, if you want to run the 3D experiment, this depends on PointNet++.
     pip install -e .
 
 Finally, run the following to install other packages.
-    
+   
+    # make sure you are at the repository root directory
     pip install -r requirements.txt
 
 to install the other dependencies.
@@ -52,7 +53,7 @@ Before training the network, we need to collect a large set of interaction trial
 
     bash scripts/run_gen_offline_data.sh
 
-This file generates data for a single cabinet example under the *pushing* primitive action. 
+This file generates data for StorageFurniture training shapes under the *pushing* primitive action. 
 You can modify the content of the above file to generate data for different settings.
 Also, please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
 Check the other parameters for more information.
@@ -60,13 +61,22 @@ Check the other parameters for more information.
     python gen_offline_data.py --help
 
 ## 3D Experiment
-To train the network from scratch, run
+To train the network, first train the Action Scoring Module (critic) only until convergence,
 
-    bash scripts/
+    bash scripts/run_train_3d_critic.sh
 
-To test the model, run
+then, train the full model (please specify the pre-trained critic-only network checkpoint),
 
-    bash scripts/
+    bash scripts/run_train_3d.sh
 
+To evaluate and visualize the results, run
+
+    bash scripts/run_visu_critic_heatmap.sh 40147
+    
+to visualize the Action Scoring Module predictions (Fig. 4 in the main paper), and use 
+
+    bash scripts/run_visu_action_heatmap_proposals.sh 40147
+    
+to visualize the Actionability Module and Action Proposal Module results (Fig. 1, 5 in the main paper).
 
 

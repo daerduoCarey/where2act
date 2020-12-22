@@ -1,16 +1,138 @@
 import os
 import sys
-import torch
 import h5py
+import torch
 import numpy as np
+import importlib
+import random
+import shutil
+from PIL import Image
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(BASE_DIR, '../utils'))
 from colors import colors
 colors = np.array(colors, dtype=np.float32)
+import matplotlib.pylab as plt
+from mpl_toolkits.mplot3d import Axes3D
 
+
+def force_mkdir(folder):
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    os.mkdir(folder)
 
 def printout(flog, strout):
     print(strout)
     if flog is not None:
         flog.write(strout + '\n')
+
+def optimizer_to_device(optimizer, device):
+    for state in optimizer.state.values():
+        for k, v in state.items():
+            if torch.is_tensor(v):
+                state[k] = v.to(device)
+
+def get_model_module(model_version):
+    importlib.invalidate_caches()
+    return importlib.import_module('models.' + model_version)
+
+def collate_feats(b):
+    return list(zip(*b))
+
+def collate_feats_pass(b):
+    return b
+
+def collate_feats_with_none(b):
+    b = filter (lambda x:x is not None, b)
+    return list(zip(*b))
+
+def worker_init_fn(worker_id):
+    """ The function is designed for pytorch multi-process dataloader.
+        Note that we use the pytorch random generator to generate a base_seed.
+        Please try to be consistent.
+        References:
+            https://pytorch.org/docs/stable/notes/faq.html#dataloader-workers-random-seed
+    """
+    base_seed = torch.IntTensor(1).random_().item()
+    #print(worker_id, base_seed)
+    np.random.seed(base_seed + worker_id)
+
+def viz_mask(ids):
+    return colors[ids]
+
+def draw_dot(img, xy):
+    out = np.array(img, dtype=np.uint8)
+    x, y = xy[0], xy[1]
+    neighbors = np.array([[0, 0, 0, 1, 1, 1, -1, -1, 1], \
+                          [0, 1, -1, 0, 1, -1, 0, 1, -1]], dtype=np.int32)
+    for i in range(neighbors.shape[1]):
+        nx = x + neighbors[0, i]
+        ny = y + neighbors[1, i]
+        if nx >= 0 and nx < img.shape[0] and ny >= 0 and ny < img.shape[1]:
+            out[nx, ny, 0] = 0
+            out[nx, ny, 1] = 0
+            out[nx, ny, 2] = 255
+
+    return out
+
+def print_true_false(d):
+    d = int(d)
+    if d > 0.5:
+        return 'True'
+    return 'False'
+
+def img_resize(data):
+    data = np.array(data, dtype=np.float32)
+    mini, maxi = np.min(data), np.max(data)
+    data -= mini
+    data /= maxi - mini
+    data = np.array(Image.fromarray((data*255).astype(np.uint8)).resize((224, 224)), dtype=np.float32) / 255
+    data *= maxi - mini
+    data += mini
+    return data
+
+def export_pts(out, v):
+    with open(out, 'w') as fout:
+        for i in range(v.shape[0]):
+            fout.write('%f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2]))
+
+def export_label(out, l):
+    with open(out, 'w') as fout:
+        for i in range(l.shape[0]):
+            fout.write('%f\n' % (l[i]))
+
+def export_pts_label(out, v, l):
+    with open(out, 'w') as fout:
+        for i in range(l.shape[0]):
+            fout.write('%f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], l[i]))
+
+def convert_color_to_hexcode(rgb):
+    r, g, b = rgb
+    return '#%02x%02x%02x' % (int(r*255), int(g*255), int(b*255))
+
+def render_pts_color_png(out, v, c):
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1, projection='3d')
+    ax.view_init(elev=0, azim=0)
+    for i in range(len(v.shape[0])):
+        ax.scatter(v[i, 0], v[i, 1], v[i, 2], color=(c[i, 0], c[i, 1], c[i, 2]), marker='.')
+    miv = np.min([np.min(v[:, 0]), np.min(v[:, 1]), np.min(v[:, 2])])
+    mav = np.max([np.max(v[:, 0]), np.max(v[:, 1]), np.max(v[:, 2])])
+    ax.set_xlim(miv, mav)
+    ax.set_ylim(miv, mav)
+    ax.set_zlim(miv, mav)
+    plt.tight_layout()
+    fig.savefig(out+'.png', bbox_inches='tight')
+    plt.close(fig)
+
+def export_pts_color_obj(out, v, c):
+    with open(out+'.obj', 'w') as fout:
+        for i in range(v.shape[0]):
+            fout.write('v %f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
+
+def export_pts_color_pts(out, v, c):
+    with open(out+'.pts', 'w') as fout:
+        for i in range(v.shape[0]):
+            fout.write('%f %f %f %f %f %f\n' % (v[i, 0], v[i, 1], v[i, 2], c[i, 0], c[i, 1], c[i, 2]))
 
 def load_checkpoint(models, model_names, dirname, epoch=None, optimizers=None, optimizer_names=None, strict=True):
     if len(models) != len(model_names) or (optimizers is not None and len(optimizers) != len(optimizer_names)):
@@ -134,4 +256,3 @@ def save_h5(fn, data):
     for d, n, t in data:
         fout.create_dataset(n, data=d, compression='gzip', compression_opts=4, dtype=t)
     fout.close()
-

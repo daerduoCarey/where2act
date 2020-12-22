@@ -30,7 +30,7 @@ from pointnet2_ops.pointnet2_utils import furthest_point_sample
 def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data_list):
     # create training and validation datasets and data loaders
     data_features = ['pcs', 'pc_pxids', 'pc_movables', 'gripper_img_target', 'gripper_direction_camera', 'gripper_forward_direction_camera', \
-            'result', 'cur_dir', 'shape_id', 'trial_id', 'primact_type', 'is_original']
+            'result', 'cur_dir', 'shape_id', 'trial_id', 'is_original']
      
     # load network model
     model_def = utils.get_model_module(conf.model_version)
@@ -77,10 +77,10 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
     utils.optimizer_to_device(network_opt, conf.device)
 
     # load dataset
-    train_dataset = SAPIENVisionDataset(conf.primact_types, conf.category_types, data_features, conf.buffer_max_num, \
+    train_dataset = SAPIENVisionDataset([conf.primact_type], conf.category_types, data_features, conf.buffer_max_num, \
             abs_thres=conf.abs_thres, rel_thres=conf.rel_thres, dp_thres=conf.dp_thres, img_size=conf.img_size, no_true_false_equal=conf.no_true_false_equal)
     
-    val_dataset = SAPIENVisionDataset(conf.primact_types, conf.category_types, data_features, conf.buffer_max_num, \
+    val_dataset = SAPIENVisionDataset([conf.primact_type], conf.category_types, data_features, conf.buffer_max_num, \
             abs_thres=conf.abs_thres, rel_thres=conf.rel_thres, dp_thres=conf.dp_thres, img_size=conf.img_size, no_true_false_equal=conf.no_true_false_equal)
     val_dataset.load_data(val_data_list)
     utils.printout(conf.flog, str(val_dataset))
@@ -242,7 +242,6 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
                     ss_cur_dir = batch[data_features.index('cur_dir')]
                     ss_shape_id = batch[data_features.index('shape_id')]
                     ss_trial_id = batch[data_features.index('trial_id')]
-                    ss_primact_type = batch[data_features.index('primact_type')]
                     ss_is_original = batch[data_features.index('is_original')]
                     for i in range(conf.batch_size):
                         valid_id_l = conf.num_interaction_data_offline + conf.num_interaction_data * (epoch-1)
@@ -400,7 +399,6 @@ def forward(batch, data_features, network, conf, \
                     cur_gripper_img_target = (gripper_img_target[i].permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
                     Image.fromarray(cur_gripper_img_target).save(os.path.join(gripper_img_target_dir, fn))
                     with open(os.path.join(info_dir, fn.replace('.png', '.txt')), 'w') as fout:
-                        fout.write('primact_type: %s\n' % batch[data_features.index('primact_type')][i])
                         fout.write('cur_dir: %s\n' % batch[data_features.index('cur_dir')][i])
                         fout.write('pred: %s\n' % utils.print_true_false(pred_result_logits[i].argmax().cpu().numpy()))
                         fout.write('gt: %s\n' % utils.print_true_false(gt_result[i].cpu().numpy()))
@@ -426,7 +424,7 @@ if __name__ == '__main__':
     # main parameters (required)
     parser.add_argument('--exp_suffix', type=str, help='exp suffix')
     parser.add_argument('--model_version', type=str, help='model def file')
-    parser.add_argument('--primact_types', type=str, help='list all primacts [Default: None, meaning all six types]', default=None)
+    parser.add_argument('--primact_type', type=str, help='the primact type')
     parser.add_argument('--category_types', type=str, help='list all categories [Default: None, meaning all 10 categories]', default=None)
     parser.add_argument('--data_dir_prefix', type=str, help='data directory')
     parser.add_argument('--offline_data_dir', type=str, help='data directory')
@@ -434,6 +432,7 @@ if __name__ == '__main__':
     parser.add_argument('--val_data_fn', type=str, help='data directory', default='data_tuple_list_val_subset.txt')
     parser.add_argument('--train_shape_fn', type=str, help='training shape file that indexs all shape-ids')
     parser.add_argument('--pretrained_critic_ckpt', type=str, help='pretrained_critic_ckpt', default=None)
+    parser.add_argument('--ins_cnt_fn', type=str, help='a file listing all category instance count')
 
     # main parameters (optional)
     parser.add_argument('--device', type=str, default='cuda:0', help='cpu or cuda:x for using cuda on GPU number x')
@@ -488,7 +487,7 @@ if __name__ == '__main__':
 
     ### prepare before training
     # make exp_name
-    conf.exp_name = f'finalexp-{conf.model_version}-{conf.primact_types}-{conf.category_types}-{conf.exp_suffix}'
+    conf.exp_name = f'finalexp-{conf.model_version}-{conf.primact_type}-{conf.category_types}-{conf.exp_suffix}'
         
     if conf.overwrite and conf.resume:
         raise ValueError('ERROR: cannot specify both --overwrite and --resume!')
@@ -558,14 +557,7 @@ if __name__ == '__main__':
     conf.device = device
     
     # parse params
-    if conf.primact_types is None:
-        conf.primact_types = ['pushing', 'pushing-up', 'pushing-left', 'pulling', 'pulling-up', 'pulling-left']
-    else:
-        conf.primact_types = conf.primact_types.split(',')
-    utils.printout(flog, 'primact_types: %s' % str(conf.primact_types))
-
-    # adjust buffer_max_num so that all primact queues sum up together
-    conf.buffer_max_num //= len(conf.primact_types)
+    utils.printout(flog, 'primact_type: %s' % str(conf.primact_type))
 
     if conf.category_types is None:
         conf.category_types = ['Box', 'Door', 'Faucet', 'Kettle', 'Microwave', 'Refrigerator', 'StorageFurniture', 'Switch', 'TrashCan', 'Window']
@@ -575,7 +567,7 @@ if __name__ == '__main__':
     
     # read cat2freq
     conf.cat2freq = dict()
-    with open('../../stats/ins_cnt_15cats.txt', 'r') as fin:
+    with open(conf.ins_cnt_fn, 'r') as fin:
         for l in fin.readlines():
             category, _, freq = l.rstrip().split()
             conf.cat2freq[category] = int(freq)
