@@ -76,10 +76,15 @@ To evaluate and visualize the results, run
 
     bash scripts/run_visu_critic_heatmap.sh 40147
     
-to visualize the Action Scoring Module predictions (Fig. 4 in the main paper), and use 
+to visualize the Action Scoring Module predictions (Fig. 4 in the main paper).
+This script use a random viewpoint and a random interaction direction, 
+so you can run multiple times to get different results.
+
+Please use 
 
     bash scripts/run_visu_action_heatmap_proposals.sh 40147
     
 to visualize the Actionability Module and Action Proposal Module results (Fig. 1, 5 in the main paper).
-
+This script will generate a GIF for all proposed successful interaction orientations for a randomly sampled pixel for interaction, 
+so you can run multiple times to get different results.
 
