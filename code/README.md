@@ -64,7 +64,7 @@ Before training the network, we need to collect a large set of interaction trial
 
     bash scripts/run_gen_offline_data.sh
 
-By default, this file generates data for all categories under the *pushing* primitive action. 
+By default, this file generates data for all categories under the *pushing* primitive action. And this will take a long time. You would need to distribute the data generation process across multiple machines.
 You can modify the content of the above file to generate data for different settings.
 
 Please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
