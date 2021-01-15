@@ -60,17 +60,12 @@ If you want to run on a headless server, simple put `xvfb-run -a ` before any co
 Install the `xvfb` tool on your server if not installed.
 
 ## Generate Offline Training Data
-Before training the network, we need to collect a large set of interaction trials via random exploration.
-
-    bash scripts/run_gen_offline_data.sh
-
-By default, this file generates data for all categories under the *pushing* primitive action. And this will take a long time. You would need to distribute the data generation process across multiple machines.
+Before training the network, we need to collect a large set of interaction trials via random exploration, using the script `scripts/run_gen_offline_data.sh`.
+By default, this file generates data for all categories under the *pushing* primitive action. 
 You can modify the content of the above file to generate data for different settings.
 
-Please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
-
 Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours (e.g. 1000 hrs or more) for the data collection.
-So, this offline data collection script is designed for you to parallize the data generation on different machines, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
+So, this offline data collection script is designed for you to parallelize the data generation on different machines, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
 After the data generation, you need to move all the data to the same folder and create one `data_tuple_list.txt` file merging all output data index files.
 Check the other parameters for more information.
 
