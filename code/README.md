@@ -3,17 +3,25 @@ This folder includes the codebase for Where2Act simulator and experiments.
 
 ## Before start
 To train the models, please first go to the `../data` folder and download the pre-processed SAPIEN dataset for Where2Act. 
+
 To test over the pretrained models, please go to the `logs` folder and download the pretrained checkpoints.
 
-Please fill in [this form]() to download all the resources.
+Please fill in [this form](http://download.cs.stanford.edu/orion/where2act/where2act_original_sapien_dataset.zip) to download all the resources.
 
 ## Dependencies
 This code has been tested on Ubuntu 18.04 with Cuda 10.1, Python 3.6, and PyTorch 1.7.0.
 
-First, install SAPIEN
+First, install SAPIEN following
 
-    pip install http://storage1.ucsd.edu/wheels/sapien-dev/sapien-0.8.0.dev0-cp36-cp36m-manylinux2014_x86_64.whl
+    pip install http://download.cs.stanford.edu/orion/where2act/where2act_sapien_wheels/sapien-0.8.0.dev0-cp36-cp36m-manylinux2014_x86_64.whl
 
+For other Python versions, you can use one of the following
+
+    pip install http://download.cs.stanford.edu/orion/where2act/where2act_sapien_wheels/sapien-0.8.0.dev0-cp35-cp35m-manylinux2014_x86_64.whl
+    pip install http://download.cs.stanford.edu/orion/where2act/where2act_sapien_wheels/sapien-0.8.0.dev0-cp37-cp37m-manylinux2014_x86_64.whl
+    pip install http://download.cs.stanford.edu/orion/where2act/where2act_sapien_wheels/sapien-0.8.0.dev0-cp38-cp38-manylinux2014_x86_64.whl
+
+Please do not use the default `pip install sapien` as SAPIEN is still being actively developed and updated.
 
 Then, if you want to run the 3D experiment, this depends on PointNet++.
 
@@ -56,12 +64,28 @@ Before training the network, we need to collect a large set of interaction trial
 
     bash scripts/run_gen_offline_data.sh
 
-This file generates data for StorageFurniture under the *pushing* primitive action. 
+By default, this file generates data for all categories under the *pushing* primitive action. 
 You can modify the content of the above file to generate data for different settings.
-Also, please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
+
+Please modify the `num_epochs` for generating different data amount and `num_processes` for the number of CPU cores to use.
+
+Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours (e.g. 1000 hrs or more) for the data collection.
+So, this offline data collection script is designed for you to parallize the data generation on different machines, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
+After the data generation, you need to move all the data to the same folder and create one `data_tuple_list.txt` file merging all output data index files.
 Check the other parameters for more information.
 
     python gen_offline_data.py --help
+
+In our experiments, the table below summarizes our default offline data generation epochs.
+
+| Primitive Action Type  | Offline Data Total Epochs |  Offline Data Loading Epochs   |
+| ------------- | ------------- |  ---------------- |
+|  pushing |   |   |
+|  pushing-up |   |   |
+|  pushing-left |   |   |
+|  pulling |   |   |
+|  pulling-up |   |   |
+|  pulling-left |   |   |
 
 ## 3D Experiment
 To train the network, first train the Action Scoring Module (critic) only until convergence,

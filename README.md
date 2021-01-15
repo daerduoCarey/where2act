@@ -5,7 +5,7 @@
 **The Proposed Where2Act Task.** Given as input an articulated 3D object, we learn to propose the actionable information for different robotic manipulation primitives (e.g. pushing, pulling): (a) the predicted actionability scores over pixels; (b) the proposed interaction trajectories, along with (c) their success likelihoods, for a selected pixel highlighted in red. We show two high-rated proposals (left) and two with lower scores (right) due to interaction orientations and potential robot-object collisions.
 
 ## Introduction
-We learn to predict per-pixel actionable information for manipulating 3D articulated objects.
+One of the fundamental goals of visual perception is to allow agents to meaningfully interact with their environment. In this paper, we take a step towards that long-term goal -- we extract highly localized actionable information related to elementary actions such as pushing or pulling for articulated objects with movable parts. For example, given a drawer, our network predicts that applying a pulling force on the handle opens the drawer. We propose, discuss, and evaluate novel network architectures that given image and depth data, predict the set of actions possible at each pixel, and the regions over articulated parts that are likely to move under the force. We propose a learning-from-interaction framework with an online data sampling strategy that allows us to train the network in simulation (SAPIEN) and generalizes across categories. But more importantly, our learned models even transfer to real-world data.
 
 ## About the paper
 
@@ -18,16 +18,17 @@ and [Shubham Tulsiani](https://shubhtuls.github.io/)
 from 
 Stanford University and FaceBook AI Research.
 
-Arxiv Version: 
+Arxiv Version: https://arxiv.org/abs/2101.02692
 
 Project Page: https://cs.stanford.edu/~kaichun/where2act
 
 ## Citations
-    @article{mo2020where2act,
-          Author={Mo, Kaichun and Guibas, Leonidas and Mukadam, Mustafa and Gupta, Abhinav and Tulsiani, Shubham},
-          Title={Where2Act: From Pixels to Actions for Articulated 3D Objects},
-          Year={2020},
-          Eprint={},
+    
+    @article{Mo21Where2Act,
+        Author = {Mo, Kaichun and Guibas, Leonidas and Mukadam, Mustafa and Gupta, Abhinav and Tulsiani, Shubham},
+        Title = {{Where2Act}: From Pixels to Actions for Articulated 3D Objects},
+        Year = {2021},
+        Eprint = {arXiv:2101.02692},
     }
 
 ## About this repository
@@ -52,5 +53,5 @@ MIT Licence
 
 ## Updates
 
-* [Jan xxx, 2021] Data and Code released.
+* [Jan 15, 2021] Preliminary version of Data and Code released. For more code on evaluation, stay tuned.
 

@@ -1,3 +1,3 @@
 This folder stores the training logs.
 
-Download the pre-trained models here.
+Please download `final_logs.zip` and unzip the content here.
