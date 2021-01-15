@@ -65,7 +65,7 @@ By default, this file generates data for all categories under the *pushing* prim
 You can modify the content of the above file to generate data for different settings.
 
 Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours, such as 10,000 hrs or more, for the data collection.
-So, this offline data collection script is designed for you to parallelize the data generation on different machines, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
+So, this offline data collection script is designed for you to parallelize the data generation on different machines and many CPU cores, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
 After the data generation, you need to move all the data to the same folder and create one `data_tuple_list.txt` file merging all output data index files.
 Check the parameters for more information.
 
