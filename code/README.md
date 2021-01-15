@@ -71,7 +71,7 @@ Check the parameters for more information.
 
     python gen_offline_data.py --help
 
-In our experiments, we train one network per primitive action. 
+In our experiments, we train one network per primitive action but across all shape categories.
 The table below summarizes our default offline data generation epochs.
 These numbers are picked such that the offline positive data reaches 10K to start off successful training.
 If you use a different setting, such as training per shape category (e.g. on Cabinet only), you might need less epochs of data to collect offline.
