@@ -6,7 +6,7 @@ To train the models, please first go to the `../data` folder and download the pr
 
 To test over the pretrained models, please go to the `logs` folder and download the pretrained checkpoints.
 
-Please fill in [this form](http://download.cs.stanford.edu/orion/where2act/where2act_original_sapien_dataset.zip) to download all the resources.
+Please fill in [this form](https://docs.google.com/forms/d/e/1FAIpQLSegEvIM22Ta44MrKM5d-guRE4aDR5K77ZQoInLWEyib-aeCFw/viewform?usp=sf_link) to download all resources.
 
 ## Dependencies
 This code has been tested on Ubuntu 18.04 with Cuda 10.1, Python 3.6, and PyTorch 1.7.0.
