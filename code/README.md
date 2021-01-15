@@ -64,7 +64,7 @@ Before training the network, we need to collect a large set of interaction trial
 By default, this file generates data for all categories under the *pushing* primitive action. 
 You can modify the content of the above file to generate data for different settings.
 
-Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours, such as 10,000 hrs or more, for the data collection.
+Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours (e.g. 10,000 hrs or more) for the data collection.
 So, this offline data collection script is designed for you to parallelize the data generation on different machines and many CPU cores, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
 After the data generation, you need to move all the data to the same folder and create one `data_tuple_list.txt` file merging all output data index files.
 Check the parameters for more information.
@@ -87,7 +87,7 @@ If you use a different setting, such as training per shape category (e.g. on Cab
 
 We also collect offline additional 100 epochs of data that will be used as the online random exploration data for each experiment.
 This data can be generated offline and loaded online during the training to save the training time.
-So, during training, we only need to spend time on collecting the online adaptative-sampled data.
+So, during training, we only need to spend time on collecting the online adaptatively sampled data.
 
 ## 3D Experiment
 To train the network, first train the Action Scoring Module (critic) only until convergence,
