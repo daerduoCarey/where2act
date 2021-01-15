@@ -73,7 +73,7 @@ Check the parameters for more information.
 
 In our experiments, we train one network per primitive action but across all shape categories.
 The table below summarizes our default offline data generation epochs.
-These numbers are picked such that the offline positive data reaches 10K to start off successful training.
+These numbers are picked empirically such that the offline positive data reaches 10K to start off successful training.
 If you use a different setting, such as training per shape category (e.g. on Cabinet only), you might need less epochs of data to collect offline.
 
 | Primitive Action Type  | Training Epochs |   Testing Epochs   |
@@ -85,7 +85,7 @@ If you use a different setting, such as training per shape category (e.g. on Cab
 |  pulling-up | 130  | 30  |  
 |  pulling-left | 130  | 30  |  
 
-We may also collect offline additional 100 epochs of data that will be used as the online random exploration data for each experiment.
+We also collect offline additional 100 epochs of data that will be used as the online random exploration data for each experiment.
 This data can be generated offline and loaded online during the training to save the training time.
 So, during training, we only need to spend time on collecting the online adaptative-sampled data.
 
