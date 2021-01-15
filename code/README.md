@@ -67,20 +67,27 @@ You can modify the content of the above file to generate data for different sett
 Generating enough offline interaction trials is necessary for a successful learning, and it may require many CPU hours (e.g. 1000 hrs or more) for the data collection.
 So, this offline data collection script is designed for you to parallelize the data generation on different machines, by setting the proper `--starting_epoch`, `--num_epochs`, `--out_fn` and `--num_processes` parameters.
 After the data generation, you need to move all the data to the same folder and create one `data_tuple_list.txt` file merging all output data index files.
-Check the other parameters for more information.
+Check the parameters for more information.
 
     python gen_offline_data.py --help
 
-In our experiments, the table below summarizes our default offline data generation epochs.
+In our experiments, we train one network per primitive action. 
+The table below summarizes our default offline data generation epochs.
+These numbers are picked such that the offline positive data reaches 10K to start off successful training.
+If you use a different setting, such as training per shape category (e.g. on Cabinet only), you might need less epochs of data to collect offline.
 
-| Primitive Action Type  | Offline Data Total Epochs |  Offline Data Loading Epochs   |
-| ------------- | ------------- |  ---------------- |
-|  pushing |   |   |
-|  pushing-up |   |   |
-|  pushing-left |   |   |
-|  pulling |   |   |
-|  pulling-up |   |   |
-|  pulling-left |   |   |
+| Primitive Action Type  | Training Epochs |   Testing Epochs   |
+| ------------- | ------------- |  ---------------- |  
+|  pushing |  50 | 10  |  
+|  pushing-up | 120  | 30  |  
+|  pushing-left | 100  | 30  |  
+|  pulling | 250  | 70  |  
+|  pulling-up | 130  | 30  |  
+|  pulling-left | 130  | 30  |  
+
+We may also collect offline additional 100 epochs of data that will be used as the online random exploration data for each experiment.
+This data can be generated offline and loaded online during the training to save the training time.
+So, during training, we only need to spend time on collecting the online adaptative-sampled data.
 
 ## 3D Experiment
 To train the network, first train the Action Scoring Module (critic) only until convergence,
