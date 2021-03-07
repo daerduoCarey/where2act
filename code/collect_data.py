@@ -30,7 +30,6 @@ parser.add_argument('--random_seed', type=int, default=None)
 parser.add_argument('--no_gui', action='store_true', default=False, help='no_gui [default: False]')
 args = parser.parse_args()
 
-
 shape_id = args.shape_id
 trial_id = args.trial_id
 primact_type = args.primact_type

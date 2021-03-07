@@ -166,7 +166,7 @@ class SAPIENVisionDataset(data.Dataset):
             else:
                 cur_dir, shape_id, category, cnt_id, trial_id, ori_pixel_ids, pixel_ids, \
                         gripper_direction_camera, gripper_forward_direction_camera, is_original, result = \
-                            self.true_data[primact_type][(index - len(self.true_data[primact_type])) % len(self.true_data[primact_type])]
+                            self.true_data[primact_type][(index - len(self.false_data[primact_type])) % len(self.true_data[primact_type])]
         else:
             if index % 2 == 0:
                 cur_dir, shape_id, category, cnt_id, trial_id, ori_pixel_ids, pixel_ids, \
