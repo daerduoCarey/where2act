@@ -539,12 +539,12 @@ if __name__ == '__main__':
                 train_shape_list.append((shape_id, category))
     utils.printout(flog, 'len(train_shape_list): %d' % len(train_shape_list))
     
+    with open(os.path.join(conf.offline_data_dir, 'data_tuple_list.txt'), 'r') as fin:
+        all_train_data_list = [os.path.join(conf.offline_data_dir, l.rstrip()) for l in fin.readlines()]
+    utils.printout(flog, 'len(all_train_data_list): %d' % len(all_train_data_list))
     if conf.resume:
         train_data_list = None
     else:
-        with open(os.path.join(conf.offline_data_dir, 'data_tuple_list.txt'), 'r') as fin:
-            all_train_data_list = [os.path.join(conf.offline_data_dir, l.rstrip()) for l in fin.readlines()]
-        utils.printout(flog, 'len(all_train_data_list): %d' % len(all_train_data_list))
         train_data_list = []
         for item in all_train_data_list:
             if int(item.split('_')[-1]) < conf.num_interaction_data_offline:
