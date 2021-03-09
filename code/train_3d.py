@@ -105,7 +105,7 @@ def train(conf, train_shape_list, train_data_list, val_data_list, all_train_data
         # figure out the latest epoch to resume
         for item in os.listdir(os.path.join(conf.exp_dir, 'ckpts')):
             if item.endswith('-train_dataset.pth'):
-                start_epoch = int(item.split('-')[0])
+                start_epoch = max(start_epoch, int(item.split('-')[0]))
 
         # load states for network, optimizer, lr_scheduler, sample_succ_list
         data_to_restore = torch.load(os.path.join(conf.exp_dir, 'ckpts', '%d-network.pth' % start_epoch))
