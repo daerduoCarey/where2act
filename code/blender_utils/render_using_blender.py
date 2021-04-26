@@ -2,12 +2,28 @@ import os
 import torch
 import numpy as np
 from subprocess import call
-from geometry_utils import load_obj, export_obj
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 from quaternion import qrot
 from colors import colors
 
-cube_mesh = load_obj(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cube.obj'), no_normal=True)
+def load_obj(fn):
+    fin = open(fn, 'r')
+    lines = [line.rstrip() for line in fin]
+    fin.close()
+
+    vertices = []; faces = [];
+    for line in lines:
+        if line.startswith('v '):
+            vertices.append(np.float32(line.split()[1:4]))
+        elif line.startswith('f '):
+            faces.append(np.int32([item.split('/')[0] for item in line.split()[1:4]]))
+
+    mesh = dict()
+    mesh['faces'] = np.vstack(faces)
+    mesh['vertices'] = np.vstack(vertices)
+    return mesh
+
+cube_mesh = load_obj(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cube.obj'))
 cube_v_torch = torch.from_numpy(cube_mesh['vertices'])
 cube_v = cube_mesh['vertices'] / 100
 cube_f = cube_mesh['faces']
