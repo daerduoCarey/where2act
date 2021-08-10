@@ -26,12 +26,11 @@ Project Page: https://cs.stanford.edu/~kaichun/where2act
 
 ## Citations
     
-    @article{Mo21Where2Act,
-        Author = {Mo, Kaichun and Guibas, Leonidas and Mukadam, Mustafa and Gupta, Abhinav and Tulsiani, Shubham},
-        Title = {{Where2Act}: From Pixels to Actions for Articulated 3D Objects},
-        booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision},
-        month = {October},
-        Year = {2021}
+    @inProceedings{mo2021where2act,
+        title={Where2Act: From Pixels to Actions for Articulated 3D Objects},
+        author={Mo, Kaichun and Guibas, Leonidas and Mukadam, Mustafa and Gupta, Abhinav and Tulsiani, Shubham},
+        year={2021},
+        booktitle={International Conference on Computer Vision (ICCV)}
     }
 
 ## About this repository
