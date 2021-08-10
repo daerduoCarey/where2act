@@ -9,6 +9,8 @@ One of the fundamental goals of visual perception is to allow agents to meaningf
 
 ## About the paper
 
+Where2Act is accepted to ICCV 2021!
+
 Our team: 
 [Kaichun Mo](https://cs.stanford.edu/~kaichun),
 [Leonidas J. Guibas](https://geometry.stanford.edu/member/guibas/),
@@ -27,8 +29,9 @@ Project Page: https://cs.stanford.edu/~kaichun/where2act
     @article{Mo21Where2Act,
         Author = {Mo, Kaichun and Guibas, Leonidas and Mukadam, Mustafa and Gupta, Abhinav and Tulsiani, Shubham},
         Title = {{Where2Act}: From Pixels to Actions for Articulated 3D Objects},
-        Year = {2021},
-        Eprint = {arXiv:2101.02692},
+        booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision},
+        month = {October},
+        Year = {2021}
     }
 
 ## About this repository
