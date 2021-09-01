@@ -144,8 +144,11 @@ class Actor(nn.Module):
     # 6D-Rot loss
     # input sz bszx6
     def get_6d_rot_loss(self, pred_6d, gt_6d):
-        pred_Rs = self.bgs(pred_6d.reshape(-1, 3, 2))
-        gt_Rs = self.bgs(gt_6d.reshape(-1, 3, 2))
+        # [bug fixed]
+        #pred_Rs = self.bgs(pred_6d.reshape(-1, 3, 2))
+        #gt_Rs = self.bgs(gt_6d.reshape(-1, 3, 2))
+        pred_Rs = self.bgs(pred_6d.reshape(-1, 2, 3).permute(0, 2, 1))
+        gt_Rs = self.bgs(gt_6d.reshape(-1, 2, 3).permute(0, 2, 1))
         theta = self.bgdR(gt_Rs, pred_Rs)
         return theta
 
