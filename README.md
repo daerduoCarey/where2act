@@ -56,4 +56,4 @@ MIT Licence
 ## Updates
 
 * [Jan 15, 2021] Preliminary version of Data and Code released. For more code on evaluation, stay tuned.
-
+* [Aug 31, 2021] Fixed a bug: https://github.com/daerduoCarey/where2act/blob/main/code/models/model_3d.py#L147-L151. Thanks to Ruihai Wu for pointing this out!
